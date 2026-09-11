@@ -1,0 +1,38 @@
+#!/bin/bash
+# load — hits.parquet (downloaded into this directory by ClickBench's driver) into
+# olab's own column store, then the row count through the running server.
+. "$(dirname "$0")/common.sh"
+cd "$OLAB_HOME"
+
+mkdir -p data/clickbench
+[ -f hits.parquet ] && mv hits.parquet data/clickbench/hits.parquet
+[ -f data/clickbench/hits.parquet ] || { echo "load: no hits.parquet here or under data/clickbench" >&2; exit 1; }
+
+# THE LOAD IS TWO SQL STATEMENTS, through the server ClickBench already started
+# (M19 S2). create.sql declares the 105 columns, their types, their nullability
+# and the four encodings the queries depend on; the COPY reads every parquet file
+# named — one dataset in one statement, which is what lets the dictionaries be
+# global and the pricing exact. One directory per table, one mmap'd file per
+# column, every unpinned column's scheme priced on the column's own values.
+# 100M rows: ~165 s and a ~17 GB peak on 16 cores.
+rm -rf data/olab
+"${PSQL[@]}" -tA -v ON_ERROR_STOP=1 -f "$OLAB_HOME/create.sql"
+# An absolute path: the statement is resolved by the SERVER, whose working
+# directory is not this script's.
+copied=$("${PSQL[@]}" -tA -c "COPY hits FROM '$OLAB_HOME/data/clickbench/hits.parquet'")
+echo "load: $copied"
+case "$copied" in
+  "COPY "*) ;;
+  *) echo "load: the COPY did not report a row count: '$copied'" >&2; exit 1 ;;
+esac
+
+# ClickBench's hits is exactly 99,997,497 rows; anything else is a partial load.
+expected=99997497
+got=$("${PSQL[@]}" -tAq -c 'SELECT count(*) FROM hits')
+if [ "$got" != "$expected" ]; then
+  echo "load: hits has '$got' rows, expected $expected" >&2
+  exit 1
+fi
+
+rm -f data/clickbench/hits.parquet
+sync

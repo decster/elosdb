@@ -1,0 +1,35 @@
+#!/bin/bash
+# start — one elosdb on 127.0.0.1:$OLAB_PORT, with the defaults the binary picks
+# for itself: every core, pinned 0..N-1, 80% of what the cgroup allows the process
+# with 62.5% of that as the column cache, and glibc.malloc.hugetlb=1 by re-exec.
+# Nothing here is tuned for ClickBench — `tuned: no` in template.json is a claim
+# this file has to keep, so the only flags are where to listen and where the data is.
+. "$(dirname "$0")/common.sh"
+cd "$OLAB_HOME"
+./check >/dev/null 2>&1 && exit 0
+
+nohup "$OLAB_BIN" --port "$OLAB_PORT" --data-dir "$OLAB_DATA/olab/canonical" \
+  --log "$OLAB_HOME/serve.tsv" >> "$OLAB_HOME/serve.log" 2>&1 &
+echo $! > olab.pid
+
+# THE BANNER IS THE VENUE STAMP AND ONE LINE OF IT IS A CLAIM THAT CAN FAIL. If the
+# re-exec that sets glibc.malloc.hugetlb=1 did not take, every large allocation gets
+# 4 KB pages and twelve of the 43 queries run 3.45x slower with nothing else in the
+# output to say so. Fail here rather than publish that number.
+#
+# AND A LINE THAT NEVER ARRIVES MUST NOT READ AS PASS: waiting for the line and then
+# testing only for WARNING makes a dead server, a renamed banner field and a timeout
+# indistinguishable from success. So the absence of the claim is a failure too.
+seen=""
+for _ in $(seq 1 40); do
+  grep -q "^  malloc:" serve.log && { seen=1; break; }
+  sleep 0.25
+done
+if [ -z "$seen" ]; then
+  echo "start: elosdb printed no 'malloc:' banner line in 10 s — see serve.log" >&2
+  exit 1
+fi
+if grep -q "^  malloc: WARNING" serve.log; then
+  echo "start: elosdb could not get 2 MB pages — see serve.log" >&2
+  exit 1
+fi

@@ -1,0 +1,12 @@
+#!/bin/bash
+# stop — SIGTERM the server and wait until it is gone, so the driver's drop_caches
+# finds no process still holding the store's pages mapped.
+. "$(dirname "$0")/common.sh"
+cd "$OLAB_HOME"
+if [ -f olab.pid ]; then kill "$(cat olab.pid)" 2>/dev/null || true; fi
+pkill -f "^$OLAB_BIN --port " 2>/dev/null || true
+for _ in $(seq 1 60); do
+  pgrep -f "^$OLAB_BIN --port " >/dev/null 2>&1 || break
+  sleep 0.5
+done
+rm -f olab.pid
