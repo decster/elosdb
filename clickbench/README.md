@@ -5,22 +5,22 @@ with its own column format, behind a Rust host that speaks the PostgreSQL v3 wir
 protocol and keeps [DataFusion](https://datafusion.apache.org/) in the process as a
 fallback frontend for statements the engine's own planner does not accept. All 43
 ClickBench queries are answered by the engine; DataFusion answered none of the
-4025 statements two venue runs sent it.
+2957 statements the published run sent it.
 
     c8g.4xlarge (Graviton4, 16 vCPU, 32 GiB), 100M rows, ClickBench's own driver
 
-    combined  1.376    rank 1 of 77     (Umbra 1.838)
-    hot       1.004    rank 1 of 81     (Umbra 1.253)
-    cold      1.431    rank 1 of 77     (Umbra 1.942)
-    load      60.1 s   data size 8,028,674,163 B (8.03 GB)   concurrent QPS 3.208
+    combined  1.366    rank 1 of 77     (Umbra 1.838)
+    hot       0.999    rank 1 of 81     (Umbra 1.253)
+    cold      1.393    rank 1 of 77     (Umbra 1.942)
+    load      61.0 s   data size 8,028,674,163 B (8.03 GB)   concurrent QPS 4.812
 
 `hot`, `cold` and `combined` are the relative metrics ClickBench's own
 `index.html` computes — a geomean of per-query ratios to the best result in the
 field, `combined` weighting 10% load + 10% size + 20% cold + 60% hot. They are
 quoted here against the c8g.4xlarge board, which is the board this result is on.
 Thrown into the unfiltered submission list (every machine, every cluster size),
-the same run scores `combined` 2.179, rank 3 of 947, behind two Umbra entries on
-192-vCPU metal.
+this run's predecessor on identical code scores `combined` 2.179, rank 3 of 947,
+behind two Umbra entries on 192-vCPU metal.
 
 ## Installing it
 

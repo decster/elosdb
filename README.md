@@ -14,18 +14,22 @@ engine source is not public yet.
 
 | | elosdb | rank | next |
 |---|---|---|---|
-| `combined` | **1.376** | **1 of 77** | Umbra 1.838 |
-| hot | **1.004** | **1 of 81** | Umbra 1.253 |
-| cold | **1.431** | **1 of 77** | Umbra 1.942 |
-| load | 60.1 s | | |
+| `combined` | **1.366** | **1 of 77** | Umbra 1.838 |
+| hot | **0.999** | **1 of 81** | Umbra 1.253 |
+| cold | **1.393** | **1 of 77** | Umbra 1.942 |
+| load | 61.0 s | | |
 | data size | 8,028,674,163 B | smallest in the field | Umbra 8.30 GB |
-| concurrent QPS | 3.208 | | |
+| concurrent QPS | 4.812 | | |
 
 Rank 1 on all three scored columns at once. The metrics are the relative geomeans
 ClickBench's own `index.html` computes, against the c8g.4xlarge board.
 
+The run that produced these numbers installed the `v0.1.0` release from this
+repository's releases page on a fresh instance, compiled nothing, and answered every
+one of its 2957 statements with the engine rather than the DataFusion fallback.
+
 Against the *unfiltered* submission list — every machine, every cluster size, tuned
-and untuned — the same run scores `combined` **2.179, rank 3 of 947**, behind two
+and untuned — the same code scores `combined` **2.179, rank 3 of 947**, behind two
 Umbra entries on 192-vCPU metal instances.
 
 See [`clickbench/`](clickbench/) for the submission and how to run it yourself.
