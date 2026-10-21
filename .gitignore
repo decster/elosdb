@@ -1,0 +1,4 @@
+# `install` writes the downloaded binary here. It is 130 MB, it is a RELEASE ASSET,
+# and a copy of it in git would be a second source of truth for the one thing this
+# repository pins by digest.
+clickbench/bin/
